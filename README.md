@@ -32,6 +32,11 @@ The script consists of two parts. The first part, **`pull`**, involves extractin
 - Comprehensive logging and error handling
 - GUI file selection dialog
 
+DEMO
+
+<img src="./images/pull.gif" width="637" height="447" />
+
+
 ### 🖼️  Folder Customization (`apply`)
 
 - Automatically apply icons to folders using found .exe or .ico files
@@ -41,6 +46,10 @@ The script consists of two parts. The first part, **`pull`**, involves extractin
 - Custom filtering to exclude specific folders
 - Desktop.ini file management
 - Icon removal functionality with Explorer restart
+
+DEMO
+
+<img src="./images/apply.gif" width="637" height="447" />
 
 ## 💡 Quick Start
 
