@@ -672,9 +672,9 @@ function Restart-ExplorerAsUser {
         foreach ($process in $explorerProcesses) {
             try {
                 $process | Stop-Process -Force
-                Wait-Process -Id $process.Id -Timeout 10 -ErrorAction SilentlyContinue
+                Wait-Process -Id $process.Id -Timeout 5 -ErrorAction SilentlyContinue
             } catch {
-                # Timeout or process has already terminated
+                Write-Verbose "Process $($process.Id) already terminated or timeout reached"
             }
         }
     }
@@ -777,10 +777,21 @@ function pull {
     try {
         foreach ($i in $directory) {
             if (Test-Path $i){
-                if ($file_GUI){
-                    $resolved_path = Get-ChildItem -Path $i -Filter '*.exe'
+                $item = Get-Item -Path $i
+                
+                if ($item -is [System.IO.FileInfo]) {
+                    if ($item.Extension -eq '.exe') {
+                        $resolved_path = @($item)
+                    } else {
+                        Write-Host "File is not an executable:`n $($item.FullName)" -ForegroundColor Red
+                        continue
+                    }
                 } else {
-                    $resolved_path = Get-ChildItem -Path $i -Filter '*.exe' -Recurse -Depth $search_depth
+                    if (($file -or $file_GUI) -or $search_depth -eq 0) {
+                        $resolved_path = Get-ChildItem -Path $i -Filter '*.exe'
+                    } else {
+                        $resolved_path = Get-ChildItem -Path $i -Filter '*.exe' -Recurse -Depth $search_depth
+                    }
                 }
                 
                 foreach ($_path in $resolved_path){
