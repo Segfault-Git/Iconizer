@@ -665,6 +665,16 @@ function Test-ForbiddenFolder {
     return $false
 }
 
+function Restart-ExplorerAsUser {
+	Get-Process -Name explorer -ErrorAction SilentlyContinue | Stop-Process -Force
+    
+	while (Get-Process -Name explorer -ErrorAction SilentlyContinue) {
+		Start-Sleep -Milliseconds 100
+	}
+    
+	cmd /c "start /b explorer.exe"
+}
+
 function Logging {
     [CmdletBinding()]
     param (
@@ -730,8 +740,6 @@ function pull {
         [switch]$pause
     )
     
-    Timer -start
-    
     Import-Type-Pull
     
     if (!($directory)) {
@@ -756,6 +764,8 @@ function pull {
     }
     
     $ErrorActionPreference = 'Stop'
+    
+    Timer -start
     
     try {
         foreach ($i in $directory) {
@@ -1025,9 +1035,7 @@ function apply {
             $key = [System.Console]::ReadKey($true)
             if ($key.Key -eq 'R') {
                 Write-Host "Restarting Explorer..." -ForegroundColor Yellow
-                Stop-Process -Name explorer -ErrorAction Stop
-                Start-Sleep -Seconds 1
-                cmd /c "start /b explorer.exe"
+                Restart-ExplorerAsUser
                 Write-Host "Explorer restarted." -ForegroundColor Green
             }
         }
