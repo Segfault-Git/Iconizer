@@ -666,13 +666,20 @@ function Test-ForbiddenFolder {
 }
 
 function Restart-ExplorerAsUser {
-	Get-Process -Name explorer -ErrorAction SilentlyContinue | Stop-Process -Force
+    $explorerProcesses = Get-Process -Name explorer -ErrorAction SilentlyContinue
     
-	while (Get-Process -Name explorer -ErrorAction SilentlyContinue) {
-		Start-Sleep -Milliseconds 100
-	}
+    if ($explorerProcesses) {
+        foreach ($process in $explorerProcesses) {
+            try {
+                $process | Stop-Process -Force
+                Wait-Process -Id $process.Id -Timeout 10 -ErrorAction SilentlyContinue
+            } catch {
+                # Timeout or process has already terminated
+            }
+        }
+    }
     
-	cmd /c "start /b explorer.exe"
+    cmd /c "start /b explorer.exe"
 }
 
 function Logging {
