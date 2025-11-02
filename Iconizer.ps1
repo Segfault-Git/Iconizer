@@ -139,6 +139,7 @@ public class IconExtractor
 }
 
 function Get-IconsByGroup-Pull {
+    [CmdletBinding()]
     param(
         [string]$FilePath,
         [int]$index = 1,
@@ -246,7 +247,7 @@ function Get-IconsByGroup-Pull {
                         $iconCount = [BitConverter]::ToUInt16($iconDir, 4)
                         
                         Write-Host "Icons found in group: " -ForegroundColor DarkGray -NoNewline
-                        Write-Host "$iconCount`n" -ForegroundColor Cyan
+                        Write-Host "$iconCount" -ForegroundColor Cyan
                         
                         # Create ICO file
                         if ($all){
@@ -319,7 +320,7 @@ function Get-IconsByGroup-Pull {
                                             if ($bitCount -eq 0) { $bitCount = 32 }
                                             if ($width -eq 0) { $width = 256 }
                                             if ($height -eq 0) { $height = 256 }
-                                            Write-Host "  Icon $($i+1): ${width}x${height}, $bitCount bit, $iconSize bytes" -ForegroundColor Gray
+                                            if ($VerbosePreference -ne 'SilentlyContinue') { Write-Host "  Icon $($i+1): ${width}x${height}, $bitCount bit, $iconSize bytes" -ForegroundColor Gray }
                                         }
                                     }
                                 }
@@ -335,7 +336,7 @@ function Get-IconsByGroup-Pull {
                                     $allData += $iconBytes
                                 }
                                 [System.IO.File]::WriteAllBytes($icoPath, $allData)
-                                Write-Host "`nSaved: " -NoNewline -ForegroundColor DarkGray
+                                Write-Host "Saved: " -NoNewline -ForegroundColor DarkGray
                                 Write-Host "$icoPath" -ForegroundColor Green
                             }
                             $script:totalExtracted++
@@ -376,7 +377,7 @@ function Get-IconsByGroup-Pull {
                 Write-Host "Group #$index not found or failed to extract" -ForegroundColor Red
             }
         } else {
-            Write-Host "`nTotal groups extracted: " -NoNewline -ForegroundColor DarkGray
+            Write-Host "Total groups extracted: " -NoNewline -ForegroundColor DarkGray
             Write-Host "$script:totalExtracted" -ForegroundColor Cyan
             Write-Host "Processed groups: " -NoNewline -ForegroundColor DarkGray
             Write-Host "$($script:resourcesNames -join ', ')" -ForegroundColor Cyan
@@ -388,6 +389,7 @@ function Get-IconsByGroup-Pull {
 }
 
 function Convert-IconToPNG {
+    [CmdletBinding()]
     param(
         [hashtable]$IconData,
         [string]$PngPath,
@@ -741,7 +743,7 @@ function pull {
         [switch]$all,
         # open GUI for single file (folder by default)
         [Alias('f')]
-        [switch]$file,
+        [switch]$file_sw,
         # pause after
         [Alias('p')]
         [switch]$pause
@@ -750,14 +752,15 @@ function pull {
     Import-Type-Pull
     
     if (!($directory)) {
-        if ($file){
+        if ($file_sw){
             $directory = SelectPath -files
+            $file_from_GUI = $true
         } else {
             $directory = SelectPath
         }
         
         if ($directory){
-            $file_GUI = $true
+            $from_GUI = $true
         }
     }
     
@@ -773,10 +776,13 @@ function pull {
     $ErrorActionPreference = 'Stop'
     
     Timer -start
+
+    Write-Host "`nProcessing:" -ForegroundColor DarkGray
+    $directory | ForEach-Object { Write-Host " $($_)" -ForegroundColor DarkBlue }
     
     try {
         foreach ($i in $directory) {
-            if (Test-Path $i){
+            if (Test-Path -Path $i){
                 $item = Get-Item -Path $i
                 
                 if ($item -is [System.IO.FileInfo]) {
@@ -787,7 +793,7 @@ function pull {
                         continue
                     }
                 } else {
-                    if (($file -or $file_GUI) -or $search_depth -eq 0) {
+                    if (($file_from_GUI) -or ($search_depth -eq 0)) {
                         $resolved_path = Get-ChildItem -Path $i -Filter '*.exe'
                     } else {
                         $resolved_path = Get-ChildItem -Path $i -Filter '*.exe' -Recurse -Depth $search_depth
@@ -796,7 +802,7 @@ function pull {
                 
                 foreach ($_path in $resolved_path){
                     if ($_path) {
-                        Write-Host "`n--------------`nExtracting icons from:"
+                        Write-Host "--------------`nExtracting icons from:"
                         Write-Host " $($_path.FullName)" -ForegroundColor Green
                         $params = @{
                             FilePath  = $_path.FullName
