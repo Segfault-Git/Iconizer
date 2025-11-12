@@ -413,6 +413,10 @@ function Get-IconsByGroup-Pull {
             Write-Host "$($extractionState.ResourcesNames -join ', ')" -ForegroundColor Cyan
         }
     }
+    catch {
+        Write-Host "Error during ico extraction: $($_.Exception.Message)" -ForegroundColor Red
+        return $false
+    }
     finally {
         [IconExtractor]::FreeLibrary($hModule) | Out-Null
     }
@@ -725,9 +729,8 @@ function Logging {
         if ($stop){
             try {
                 Stop-Transcript
-            }
-            catch {
-                return
+            } catch {
+                Write-Host "Error in logging: $($_.Exception.Message)" -ForegroundColor Red
             }
         }
         
@@ -856,17 +859,12 @@ function pull {
     } catch {
         Write-Host "`nError:$_" -ForegroundColor Red
         Write-Host "`n$($_.ScriptStackTrace)`n" -ForegroundColor Red
+    } finally {
+        Timer -end
+        if ($log){ Logging -stop }
+        if ($pause){ pause }
     }
-    
-    Timer -end
-    
-    if ($log){
-        Logging -stop
-    }
-    
-    if ($pause){
-        pause
-    }
+
 }
 
 function apply {
@@ -1111,15 +1109,9 @@ function apply {
     } catch {
         Write-Host "`n$_" -ForegroundColor Red
         Write-Host "`n$($_.ScriptStackTrace)`n" -ForegroundColor Red
-    }
-    
-    Timer -end
-    
-    if ($log){
-        Logging -stop
-    }
-    
-    if ($pause){
-        pause
+    } finally {
+        Timer -end
+        if ($log){ Logging -stop }
+        if ($pause){ pause }
     }
 }
