@@ -36,7 +36,6 @@ DEMO
 
 <img src="./images/pull.gif" width="637" height="447" />
 
-
 ### 🖼️  Folder Customization (`apply`)
 
 - Automatically apply icons to folders using found .exe or .ico files

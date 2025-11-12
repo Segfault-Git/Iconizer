@@ -1,3 +1,7 @@
+$pattern_regex = '[^\w\s]'
+$pattern_regex_digits = '\d+'
+$pattern_regex_symbols = '[!#$%&()+;@^_{}~№]'
+
 function Timer {
     param(
         [switch]$start,
@@ -141,21 +145,44 @@ public class IconExtractor
 function Get-IconsByGroup-Pull {
     [CmdletBinding()]
     param(
+        [Parameter(Mandatory=$true)]
+        [ValidateScript({
+            if (-not (Test-Path $_ -PathType Leaf)) {
+                throw "File not found: $_"
+            }
+            if ([System.IO.Path]::GetExtension($_) -ne '.exe') {
+                throw "File must be an executable (.exe): $_"
+            }
+            return $true
+        })]
         [string]$FilePath,
+        
+        [Parameter(Mandatory=$false)]
+        [ValidateRange(1, [int]::MaxValue)]
         [int]$index = 1,
+        
+        [Parameter(Mandatory=$false)]
+        [ValidateScript({
+            if ($_ -and -not (Test-Path $_ -PathType Container)) {
+                throw "Output directory does not exist: $_"
+            }
+            return $true
+        })]
         [string]$OutputDir = ".",
+        
         [switch]$all,
         [switch]$info,
         [switch]$png
     )
     
-    if (-not (Test-Path $FilePath)) {
-        Write-Host "File not found: $FilePath" -ForegroundColor Red
-        return
-    }
-    
+    # Create output directory if needed (unless in info mode)
     if (-not $info -and -not (Test-Path $OutputDir)) {
-        New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
+        try {
+            New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
+        } catch {
+            Write-Host "Failed to create output directory: $OutputDir" -ForegroundColor Red
+            return
+        }
     }
     
     if ($info) {
@@ -172,14 +199,17 @@ function Get-IconsByGroup-Pull {
     }
     
     try {
-        $script:currentGroup = 0
-        $script:targetGroup = $index
-        $script:extractAll = $all
-        $script:totalExtracted = 0
-        $script:processedGroups = @()
-        $script:resourcesNames = @()
+        # Initialize extraction state
+        $extractionState = @{
+            CurrentGroup = 0
+            TargetGroup = $index
+            ExtractAll = $all
+            TotalExtracted = 0
+            ProcessedGroups = [System.Collections.Generic.List[int]]::new()
+            ResourcesNames = [System.Collections.Generic.List[string]]::new()
+        }
         
-        if ($script:extractAll) {
+        if ($extractionState.ExtractAll) {
             Write-Host 'Analyzing all icon groups' -ForegroundColor Yellow
         } else {
             Write-Host "Analyzing group " -NoNewline -ForegroundColor DarkGray
@@ -189,13 +219,13 @@ function Get-IconsByGroup-Pull {
         $callback = {
             param($hMod, $lpType, $lpName, $lParam)
             
-            $script:currentGroup++
+            $extractionState.CurrentGroup++
             
             # Variables to track the best icon from current group
             $currentGroupLargestIcon = $null
             $currentGroupLargestSize = 0
             
-            if (-not $script:extractAll -and $script:currentGroup -ne $script:targetGroup) {
+            if (-not $extractionState.ExtractAll -and $extractionState.CurrentGroup -ne $extractionState.TargetGroup) {
                 return $true
             }
             
@@ -213,7 +243,7 @@ function Get-IconsByGroup-Pull {
             }
             
             Write-Host "Extracting group " -ForegroundColor DarkGray -NoNewline
-            Write-Host "#$script:currentGroup ($resourceName)" -ForegroundColor Green
+            Write-Host "#$($extractionState.CurrentGroup) ($resourceName)" -ForegroundColor Green
             # Load and analyze icon group resource
             $hResInfo = [IntPtr]::Zero
             
@@ -251,7 +281,7 @@ function Get-IconsByGroup-Pull {
                         
                         # Create ICO file
                         if ($all){
-                            $icoPath = Join-Path $OutputDir "${ICO_name}_Group_${script:currentGroup}_${resourceName}.ico"
+                            $icoPath = Join-Path $OutputDir "${ICO_name}_Group_$($extractionState.CurrentGroup)_${resourceName}.ico"
                         } else {
                             $icoPath = Join-Path $OutputDir "$ICO_name.ico"
                         }
@@ -339,9 +369,9 @@ function Get-IconsByGroup-Pull {
                                 Write-Host "Saved: " -NoNewline -ForegroundColor DarkGray
                                 Write-Host "$icoPath" -ForegroundColor Green
                             }
-                            $script:totalExtracted++
-                            $script:processedGroups += $script:currentGroup
-                            $script:resourcesNames += $resourceName
+                            $extractionState.TotalExtracted++
+                            $extractionState.ProcessedGroups.Add($extractionState.CurrentGroup)
+                            $extractionState.ResourcesNames.Add($resourceName)
                             $groupExtracted = $true
                         }
                     }
@@ -349,13 +379,13 @@ function Get-IconsByGroup-Pull {
             }
             
             if (-not $groupExtracted) {
-                Write-Host "Failed to extract group #$script:currentGroup" -ForegroundColor Red
+                Write-Host "Failed to extract group #$($extractionState.CurrentGroup)" -ForegroundColor Red
             }
             
             # Extract largest icon from current group as PNG if requested
             if ($png -and $currentGroupLargestIcon) {
-                $pngFileName = if ($script:extractAll) {
-                    "${ICO_name}_Group_${script:currentGroup}_${resourceName}.png"
+                $pngFileName = if ($extractionState.ExtractAll) {
+                    "${ICO_name}_Group_$($extractionState.CurrentGroup)_${resourceName}.png"
                 } else {
                     "${ICO_name}.png"
                 }
@@ -364,23 +394,23 @@ function Get-IconsByGroup-Pull {
                 Convert-IconToPNG -IconData $currentGroupLargestIcon -PngPath $pngPath -ICO_name $ICO_name
             }
             
-            return $script:extractAll
+            return $extractionState.ExtractAll
         }
         
         $callbackDelegate = [IconExtractor+EnumResNameProc]$callback
         [IconExtractor]::EnumResourceNames($hModule, [IntPtr][IconExtractor]::RT_GROUP_ICON, $callbackDelegate, [IntPtr]::Zero) | Out-Null
         
-        if ($script:totalExtracted -eq 0) {
-            if ($script:extractAll) {
+        if ($extractionState.TotalExtracted -eq 0) {
+            if ($extractionState.ExtractAll) {
                 Write-Host "No icon groups found or failed to extract any groups" -ForegroundColor Red
             } else {
                 Write-Host "Group #$index not found or failed to extract" -ForegroundColor Red
             }
         } else {
             Write-Host "Total groups extracted: " -NoNewline -ForegroundColor DarkGray
-            Write-Host "$script:totalExtracted" -ForegroundColor Cyan
+            Write-Host "$($extractionState.TotalExtracted)" -ForegroundColor Cyan
             Write-Host "Processed groups: " -NoNewline -ForegroundColor DarkGray
-            Write-Host "$($script:resourcesNames -join ', ')" -ForegroundColor Cyan
+            Write-Host "$($extractionState.ResourcesNames -join ', ')" -ForegroundColor Cyan
         }
     }
     finally {
@@ -527,14 +557,16 @@ function Find-Candidates {
     
     if ($allFiles) {
         if ($VerbosePreference -ne 'SilentlyContinue') {
-            Write-Host "Found: " -ForegroundColor DarkGray
-            Write-Host "$($allFiles -join "`n")" -ForegroundColor DarkGray
+            Write-Host "`nFound: " -ForegroundColor DarkGray
+            Write-Host "$($allFiles -join "`n")`n"
         }
         
         $candidates = @()
         
         $folderWords = $name_folder.Trim().Split(' ')
         $fullFolderName = $name_folder -replace '\s+', ''
+        
+        if ($VerbosePreference -ne 'SilentlyContinue'){ Write-Host "Candidates:" -ForegroundColor DarkGray }
         
         foreach ($file in $allFiles) {
             $FileName = ($file.BaseName).ToLower() -replace $pattern_regex_symbols, '' -replace $pattern_regex, '' -replace $pattern_regex_digits, ''
@@ -565,9 +597,6 @@ function Find-Candidates {
             
             if ($priority -and $file.Extension.ToLower() -eq ".$priority") {
                 $score += 400
-                if ($VerbosePreference -ne 'SilentlyContinue'){
-                    Write-Host "Priority bonus applied to: $($file.Name)"
-                }
             }
             
             if ($score -gt 0) {
@@ -579,7 +608,9 @@ function Find-Candidates {
                     Name  = $FileName
                 }
                 if ($VerbosePreference -ne 'SilentlyContinue'){
-                    Write-Host "Candidate: $($file.Name) | Score: $score" -ForegroundColor DarkGray
+                    Write-Host "$($file.Name) " -NoNewline
+                    Write-Host "| Score: " -NoNewline -ForegroundColor DarkGray
+                    Write-Host "$score" -ForegroundColor Cyan
                 }
             }
         }
@@ -589,7 +620,7 @@ function Find-Candidates {
             $Files = $bestCandidate.File
 
             if ($VerbosePreference -ne 'SilentlyContinue') {
-                Write-Host "Best candidate: " -NoNewline -ForegroundColor DarkGray
+                Write-Host "`nBest candidate: " -NoNewline -ForegroundColor DarkGray
                 Write-Host "$($Files.Name) " -NoNewline -ForegroundColor Cyan
                 Write-Host "with score " -NoNewline -ForegroundColor DarkGray
                 Write-Host "$($bestCandidate.Score)" -ForegroundColor Cyan
@@ -898,7 +929,7 @@ function apply {
         foreach ($i in $directory) {
             if (Test-Path -Path "$i") {
                 $fullPath = (Resolve-Path -LiteralPath "$i").Path
-                if ($VerbosePreference -ne 'SilentlyContinue') { Write-Host "Adding: $fullPath" }
+                if ($VerbosePreference -ne 'SilentlyContinue') { Write-Host "`nAdding: $fullPath" }
                 if ($apply_depth -eq 0) {
                     $folders += Get-Item -LiteralPath "$i" -ErrorAction SilentlyContinue
                 } else {
@@ -944,8 +975,14 @@ function apply {
             $shouldSkip = Test-ForbiddenFolder -Path $folder.FullName -ForbiddenFolders $Filter_main
             
             if (-not $shouldSkip) {
-                Write-Host "`nProcessing folder: " -NoNewline -ForegroundColor DarkGray
-                Write-Host "$($folder.FullName)" -ForegroundColor Cyan
+                if ($VerbosePreference -ne 'SilentlyContinue'){
+                    Write-Host "`n[==================== " -NoNewline
+                    Write-Host "$($folder.FullName)" -NoNewline -ForegroundColor Cyan
+                    Write-Host " ====================]"
+                } else { 
+                    Write-Host "`nProcessing folder: " -NoNewline -ForegroundColor DarkGray
+                    Write-Host "$($folder.FullName)" -ForegroundColor Cyan
+                }
                 $Files = ''
                 $folder.Attributes = 'Directory', 'ReadOnly'
                 [string]$full_path_folder = $folder.FullName
@@ -998,7 +1035,7 @@ function apply {
                         }
                     }
                     
-                    #### Creating desktop.ini file starts
+                #### Creating desktop.ini file starts
                     $first_part = ''
                     
                     if (($Files.DirectoryName -ne $full_path_folder)) {
@@ -1035,10 +1072,10 @@ function apply {
                     
                     $shell = New-Object -ComObject Shell.Application
                     $shell.NameSpace($full_path_folder).MoveHere($tmp, 0x0004 + 0x0010 + 0x0400)
-                    #### Creating desktop.ini file ends
+                #### Creating desktop.ini file ends
                     
                     Remove-Item -Path "$tmpDir" -Force
-                    
+                    if ($VerbosePreference -ne 'SilentlyContinue'){ Write-Host " " }
                     Write-Host "$($Files.Name) " -NoNewline -ForegroundColor DarkGray
                     Write-Host "--> " -NoNewline
                     Write-Host "$($folder.Name)" -ForegroundColor Green
