@@ -54,7 +54,7 @@ DEMO
 
 >[!NOTE]
 > Direct link for security-conscious users:
-<https://raw.githubusercontent.com/JustDj-Git/Iconizer/main/Iconizer.ps1>
+<https://raw.githubusercontent.com/Segfault-GitIconizer/main/Iconizer.ps1>
 
 1. Open PowerShell (not CMD). Right-click on the Windows start menu and find PowerShell (or Terminal), or press `Win + S` and type Powershell.
 2. Copy and paste the code below and press enter for invoking **`pull`** function only
