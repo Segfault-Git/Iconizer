@@ -32,6 +32,10 @@ The script consists of two parts. The first part, **`pull`**, involves extractin
 - Comprehensive logging and error handling
 - GUI file selection dialog
 
+DEMO
+
+<img src="./images/pull.gif" width="637" height="447" />
+
 ### 🖼️  Folder Customization (`apply`)
 
 - Automatically apply icons to folders using found .exe or .ico files
@@ -42,11 +46,15 @@ The script consists of two parts. The first part, **`pull`**, involves extractin
 - Desktop.ini file management
 - Icon removal functionality with Explorer restart
 
+DEMO
+
+<img src="./images/apply.gif" width="637" height="447" />
+
 ## 💡 Quick Start
 
 >[!NOTE]
 > Direct link for security-conscious users:
-<https://raw.githubusercontent.com/JustDj-Git/Iconizer/main/Iconizer.ps1>
+<https://raw.githubusercontent.com/Segfault-GitIconizer/main/Iconizer.ps1>
 
 1. Open PowerShell (not CMD). Right-click on the Windows start menu and find PowerShell (or Terminal), or press `Win + S` and type Powershell.
 2. Copy and paste the code below and press enter for invoking **`pull`** function only
