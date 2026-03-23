@@ -833,7 +833,12 @@ function pull {
                         $resolved_path = Get-ChildItem -Path $i -Filter '*.exe' -Recurse -Depth $search_depth
                     }
                 }
-                
+
+                if (-not $resolved_path -or $resolved_path.Count -eq 0) {
+                    Write-Host "No exe files in path:`n $i" -ForegroundColor Red
+                    continue
+                }
+
                 foreach ($_path in $resolved_path){
                     if ($_path) {
                         Write-Host "`nExtracting icons from:"
@@ -843,17 +848,15 @@ function pull {
                             OutputDir = $_path.DirectoryName
                             index     = $index
                         }
-                        
+
                         if ($all) { $params.all   = $true }
                         if ($info) { $params.info  = $true }
                         if ($png) { $params.png   = $true }
                         Get-IconsByGroup-Pull @params
-                    } else {
-                        Write-Host "No exe files in path:`n $($_path.FullName)" -ForegroundColor Red
                     }
                 } #foreach
             } else {
-                Write-Host "Path is not exist:`n $($_path.FullName)" -ForegroundColor Red
+                Write-Host "Path do not exist:`n $i" -ForegroundColor Red
             }
         } #foreach
     } catch {
