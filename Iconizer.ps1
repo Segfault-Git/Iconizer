@@ -817,7 +817,7 @@ function pull {
     try {
         foreach ($i in $directory) {
             Write-Host "`nProcessing:" -ForegroundColor DarkGray
-            Write-Host " $($i.FullName)`n"
+            Write-Host " $i`n"
             
             if (Test-Path -Path $i){
                 $item = Get-Item -Path $i
