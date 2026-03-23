@@ -811,11 +811,14 @@ function pull {
     
     Timer -start
 
-    Write-Host "`nProcessing:" -ForegroundColor DarkGray
+    Write-Host "`nList:" -ForegroundColor DarkGray
     $directory | ForEach-Object { Write-Host " $($_)" -ForegroundColor DarkBlue }
     
     try {
         foreach ($i in $directory) {
+            Write-Host "`nProcessing:" -ForegroundColor DarkGray
+            Write-Host " $($i.FullName)`n"
+            
             if (Test-Path -Path $i){
                 $item = Get-Item -Path $i
                 
@@ -856,7 +859,7 @@ function pull {
                     }
                 } #foreach
             } else {
-                Write-Host "Path do not exist:`n $i" -ForegroundColor Red
+                Write-Host "`nPath do not exist:`n $i" -ForegroundColor Red
             }
         } #foreach
     } catch {
