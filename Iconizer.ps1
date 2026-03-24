@@ -242,7 +242,7 @@ function Get-IconsByGroup-Pull {
                 }
             }
             
-            Write-Host "`nExtracting group " -ForegroundColor DarkGray -NoNewline
+            Write-Host "Extracting group " -ForegroundColor DarkGray -NoNewline
             Write-Host "#$($extractionState.CurrentGroup) ($resourceName)" -ForegroundColor Green
             # Load and analyze icon group resource
             $hResInfo = [IntPtr]::Zero
@@ -407,7 +407,7 @@ function Get-IconsByGroup-Pull {
                 Write-Host "Group #$index not found or failed to extract" -ForegroundColor Red
             }
         } else {
-            Write-Host "`nTotal groups extracted: " -NoNewline -ForegroundColor DarkGray
+            Write-Host "Total groups extracted: " -NoNewline -ForegroundColor DarkGray
             Write-Host "$($extractionState.TotalExtracted)" -ForegroundColor Cyan
             Write-Host "Processed groups: " -NoNewline -ForegroundColor DarkGray
             Write-Host "$($extractionState.ResourcesNames -join ', ')" -ForegroundColor Cyan
@@ -815,8 +815,8 @@ function pull {
     $counter = 1
     try {
         foreach ($i in $directory) {
-            Write-Host "`n ($counter/$($directory.Count)) processing:" -ForegroundColor DarkGray
-            Write-Host " $($i)" -ForegroundColor DarkBlue
+            Write-Host "`n($counter/$($directory.Count)) processing:" -ForegroundColor DarkGray
+            Write-Host "$($i)" -ForegroundColor DarkBlue
             
             if (Test-Path -Path $i){
                 $item = Get-Item -Path $i
@@ -857,7 +857,7 @@ function pull {
                         Get-IconsByGroup-Pull @params
                     }
                 } #foreach
-            Write-Host "Status:" -NoNewline
+            Write-Host "Status: " -NoNewline  -ForegroundColor DarkGray
             Write-Host "Done ($counter/$($directory.Count))" -ForegroundColor Green
             $counter++
             } else {
