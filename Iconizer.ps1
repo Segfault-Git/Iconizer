@@ -810,17 +810,14 @@ function pull {
     $ErrorActionPreference = 'Stop'
     
     Timer -start
-    Write-Host "---------------" -ForegroundColor DarkGray
-    Write-Host "`nList:" -ForegroundColor DarkGray
-    Write-Host "---------------" -ForegroundColor DarkGray
+    Write-Host "---------------`nList:`n---------------" -ForegroundColor DarkGray
     $directory | ForEach-Object { Write-Host " $($_)" -ForegroundColor DarkBlue }
-    
+    $counter = 1
     try {
         foreach ($i in $directory) {
-            Write-Host "---------------" -ForegroundColor DarkGray
-            Write-Host "`nProcessing:" -ForegroundColor DarkGray
+            Write-Host "---------------`nProcessing ($counter/$($directory.Count)):" -ForegroundColor DarkGray
             Write-Host " $($i) `n" -ForegroundColor DarkBlue
-
+            $counter++
             if (Test-Path -Path $i){
                 $item = Get-Item -Path $i
                 
