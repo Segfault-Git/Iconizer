@@ -810,14 +810,14 @@ function pull {
     $ErrorActionPreference = 'Stop'
     
     Timer -start
-    Write-Host "nList:`n---------------" -ForegroundColor DarkGray
+    Write-Host "`nList:`n---------------" -ForegroundColor DarkGray
     $directory | ForEach-Object { Write-Host " $($_)" -ForegroundColor DarkBlue }
     $counter = 1
     try {
         foreach ($i in $directory) {
-            Write-Host "`nProcessing ($counter/$($directory.Count)):" -ForegroundColor DarkGray
+            Write-Host "`n ($counter/$($directory.Count)) processing:" -ForegroundColor DarkGray
             Write-Host " $($i)" -ForegroundColor DarkBlue
-            $counter++
+            
             if (Test-Path -Path $i){
                 $item = Get-Item -Path $i
                 
@@ -857,8 +857,9 @@ function pull {
                         Get-IconsByGroup-Pull @params
                     }
                 } #foreach
-            Write-Host "`nStatus:"
+            Write-Host "Status:" -NoNewline
             Write-Host "Done ($counter/$($directory.Count))" -ForegroundColor Green
+            $counter++
             } else {
                 Write-Host "Path do not exist: $i" -ForegroundColor Red
             }
