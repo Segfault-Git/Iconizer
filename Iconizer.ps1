@@ -844,7 +844,7 @@ function pull {
                 foreach ($_path in $resolved_path){
                     if ($_path) {
                         Write-Host "`nExtracting icons from:"
-                        Write-Host " $($_path.FullName)`n" -ForegroundColor Green
+                        Write-Host " $($_path.FullName)" -ForegroundColor Green
                         $params = @{
                             FilePath  = $_path.FullName
                             OutputDir = $_path.DirectoryName
@@ -857,8 +857,7 @@ function pull {
                         Get-IconsByGroup-Pull @params
                     }
                 } #foreach
-            Write-Host "Status: " -NoNewline  -ForegroundColor DarkGray
-            Write-Host "Done ($counter/$($directory.Count))" -ForegroundColor Green
+            Write-Host "---------------------" -ForegroundColor Green
             $counter++
             } else {
                 Write-Host "Path do not exist: $i" -ForegroundColor Red
