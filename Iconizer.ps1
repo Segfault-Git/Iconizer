@@ -242,7 +242,7 @@ function Get-IconsByGroup-Pull {
                 }
             }
             
-            Write-Host "`nExtracting group " -ForegroundColor DarkGray -NoNewline
+            Write-Host "Extracting group " -ForegroundColor DarkGray -NoNewline
             Write-Host "#$($extractionState.CurrentGroup) ($resourceName)" -ForegroundColor Green
             # Load and analyze icon group resource
             $hResInfo = [IntPtr]::Zero
@@ -407,7 +407,7 @@ function Get-IconsByGroup-Pull {
                 Write-Host "Group #$index not found or failed to extract" -ForegroundColor Red
             }
         } else {
-            Write-Host "`nTotal groups extracted: " -NoNewline -ForegroundColor DarkGray
+            Write-Host "Total groups extracted: " -NoNewline -ForegroundColor DarkGray
             Write-Host "$($extractionState.TotalExtracted)" -ForegroundColor Cyan
             Write-Host "Processed groups: " -NoNewline -ForegroundColor DarkGray
             Write-Host "$($extractionState.ResourcesNames -join ', ')" -ForegroundColor Cyan
@@ -810,12 +810,14 @@ function pull {
     $ErrorActionPreference = 'Stop'
     
     Timer -start
-
-    Write-Host "`nProcessing:" -ForegroundColor DarkGray
+    Write-Host "`nList:`n---------------" -ForegroundColor DarkGray
     $directory | ForEach-Object { Write-Host " $($_)" -ForegroundColor DarkBlue }
-    
+    $counter = 1
     try {
         foreach ($i in $directory) {
+            Write-Host "`n($counter/$($directory.Count)) processing:" -ForegroundColor DarkGray
+            Write-Host "$($i)" -ForegroundColor DarkBlue
+            
             if (Test-Path -Path $i){
                 $item = Get-Item -Path $i
                 
@@ -833,27 +835,32 @@ function pull {
                         $resolved_path = Get-ChildItem -Path $i -Filter '*.exe' -Recurse -Depth $search_depth
                     }
                 }
-                
+
+                if (-not $resolved_path -or $resolved_path.Count -eq 0) {
+                    Write-Host "No exe files in path:`n $i" -ForegroundColor Red
+                    continue
+                }
+
                 foreach ($_path in $resolved_path){
                     if ($_path) {
                         Write-Host "`nExtracting icons from:"
-                        Write-Host " $($_path.FullName)`n" -ForegroundColor Green
+                        Write-Host " $($_path.FullName)" -ForegroundColor Green
                         $params = @{
                             FilePath  = $_path.FullName
                             OutputDir = $_path.DirectoryName
                             index     = $index
                         }
-                        
+
                         if ($all) { $params.all   = $true }
                         if ($info) { $params.info  = $true }
                         if ($png) { $params.png   = $true }
                         Get-IconsByGroup-Pull @params
-                    } else {
-                        Write-Host "No exe files in path:`n $($_path.FullName)" -ForegroundColor Red
                     }
                 } #foreach
+            Write-Host "---------------------" -ForegroundColor Green
+            $counter++
             } else {
-                Write-Host "Path is not exist:`n $($_path.FullName)" -ForegroundColor Red
+                Write-Host "Path do not exist: $i" -ForegroundColor Red
             }
         } #foreach
     } catch {

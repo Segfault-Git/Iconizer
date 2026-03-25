@@ -3,6 +3,13 @@
 <p align="center">
   <img src="images/main.png" alt="Iconizer Main Icon"/>
 </p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/PowerShell-5.1%2B-blue" alt="PowerShell Version"/>
+  <img src="https://img.shields.io/badge/Platform-Windows-brightgreen" alt="Platform"/>
+  <img src="https://img.shields.io/badge/License-MIT-green" alt="License"/>
+</p>
+
 Iconizer is a lightweight PowerShell tool designed to extract icons from .exe files and assigning custom icons files to folders with zero installation, configuration, or leftover traces.
 
 The core idea is simplicity and portability: just run the script from anywhere and get immediate results. No dependencies, no setup — just clean PowerShell with c# seasoning and native Windows functionality.
