@@ -147,7 +147,7 @@ function Get-IconsByGroup-Pull {
     param(
         [Parameter(Mandatory=$true)]
         [ValidateScript({
-            if (-not (Test-Path $_ -PathType Leaf)) {
+            if (-not (Test-Path -LiteralPath $_ -PathType Leaf)) {
                 throw "File not found: $_"
             }
             if ([System.IO.Path]::GetExtension($_) -ne '.exe') {
@@ -163,7 +163,7 @@ function Get-IconsByGroup-Pull {
         
         [Parameter(Mandatory=$false)]
         [ValidateScript({
-            if ($_ -and -not (Test-Path $_ -PathType Container)) {
+            if ($_ -and -not (Test-Path -LiteralPath $_ -PathType Container)) {
                 throw "Output directory does not exist: $_"
             }
             return $true
@@ -176,7 +176,7 @@ function Get-IconsByGroup-Pull {
     )
     
     # Create output directory if needed (unless in info mode)
-    if (-not $info -and -not (Test-Path $OutputDir)) {
+    if (-not $info -and -not (Test-Path -LiteralPath $OutputDir)) {
         try {
             New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
         } catch {
@@ -818,8 +818,8 @@ function pull {
             Write-Host "`n($counter/$($directory.Count)) processing:" -ForegroundColor DarkGray
             Write-Host "$($i)" -ForegroundColor DarkBlue
             
-            if (Test-Path -Path $i){
-                $item = Get-Item -Path $i
+            if (Test-Path -LiteralPath $i){
+                $item = Get-Item -LiteralPath $i
                 
                 if ($item -is [System.IO.FileInfo]) {
                     if ($item.Extension -eq '.exe') {
@@ -830,9 +830,9 @@ function pull {
                     }
                 } else {
                     if (($file_from_GUI) -or ($search_depth -eq 0)) {
-                        $resolved_path = Get-ChildItem -Path $i -Filter '*.exe'
+                        $resolved_path = Get-ChildItem -LiteralPath $i -Filter '*.exe'
                     } else {
-                        $resolved_path = Get-ChildItem -Path $i -Filter '*.exe' -Recurse -Depth $search_depth
+                        $resolved_path = Get-ChildItem -LiteralPath $i -Filter '*.exe' -Recurse -Depth $search_depth
                     }
                 }
 
@@ -932,7 +932,7 @@ function apply {
         [string[]]$Filter_main += '*DeliveryOptimization*', "$env:Programfiles", "${env:ProgramFiles(x86)}", "$env:windir", '*OneCommander*', '*$RECYCLE.BIN*', '*System Volume Information*'
         
         foreach ($i in $directory) {
-            if (Test-Path -Path "$i") {
+            if (Test-Path -LiteralPath "$i") {
                 $fullPath = (Resolve-Path -LiteralPath "$i").Path
                 if ($VerbosePreference -ne 'SilentlyContinue') { Write-Host "`nAdding: $fullPath" }
                 if ($apply_depth -eq 0) {
@@ -994,7 +994,7 @@ function apply {
                 $LastDirName = Split-Path -Path "$full_path_folder" -Leaf
                 if (($rules) -and ($rules.ContainsKey($LastDirName))) {
                     $value = $rules[$LastDirName]
-                    if (Test-Path "$full_path_folder\$value") {
+                    if (Test-Path -LiteralPath "$full_path_folder\$value") {
                         $Files = Get-ChildItem -LiteralPath "$full_path_folder" -Filter $value
                     }
                 }
