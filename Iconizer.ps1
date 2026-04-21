@@ -821,7 +821,7 @@ function pull {
     Timer -start
     Write-Host "`nList:`n---------------" -ForegroundColor DarkGray
     $directory | ForEach-Object { Write-Host " $($_)" -ForegroundColor DarkBlue }
-    $counter = 1
+    $counter = 0
     try {
         foreach ($i in $directory) {
             $counter++
