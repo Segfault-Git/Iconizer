@@ -815,6 +815,7 @@ function pull {
     $counter = 1
     try {
         foreach ($i in $directory) {
+            $counter++
             Write-Host "`n($counter/$($directory.Count)) processing:" -ForegroundColor DarkGray
             Write-Host "$($i)" -ForegroundColor DarkBlue
             
@@ -857,8 +858,7 @@ function pull {
                         Get-IconsByGroup-Pull @params
                     }
                 } #foreach
-            Write-Host "---------------------" -ForegroundColor Green
-            $counter++
+                Write-Host "---------------------" -ForegroundColor Green
             } else {
                 Write-Host "Path do not exist: $i" -ForegroundColor Red
             }
