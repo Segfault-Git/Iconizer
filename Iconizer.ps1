@@ -457,23 +457,25 @@ function Convert-IconToPNG {
         if (-not $conversionSuccess) {
             try {
                 # Create properly formatted ICO file
-                $tempIcoData = @()
-                $tempIcoData += @(0, 0, 1, 0, 1, 0)  # ICO header for single icon
-                
-                # Icon directory entry (16 bytes)
-                $width = if ($IconData.Width -eq 256) { 0 } else { $IconData.Width }
+                $width  = if ($IconData.Width  -eq 256) { 0 } else { $IconData.Width }
                 $height = if ($IconData.Height -eq 256) { 0 } else { $IconData.Height }
-                $tempIcoData += @($width, $height, 0, 0)  # width, height, colors, reserved
-                $tempIcoData += @(1, 0, 32, 0)  # planes, bitcount
-                $tempIcoData += [BitConverter]::GetBytes([uint32]$IconData.Data.Length)  # size
-                $tempIcoData += [BitConverter]::GetBytes([uint32]22)  # offset
-                
-                # Add icon data
-                $tempIcoData += $IconData.Data
-                
-                # Save temporary ICO file
-                $tempIcoPath = Join-Path $env:TEMP "temp_largest_icon.ico"
-                [System.IO.File]::WriteAllBytes($tempIcoPath, $tempIcoData)
+
+                $ms = [System.IO.MemoryStream]::new()
+                try {
+                    # ICO header (6 bytes)
+                    $ms.Write([byte[]](0, 0, 1, 0, 1, 0), 0, 6)
+                    # Icon directory entry (16 bytes)
+                    $ms.Write([byte[]]($width, $height, 0, 0, 1, 0, 32, 0), 0, 8)
+                    $ms.Write([BitConverter]::GetBytes([uint32]$IconData.Data.Length), 0, 4)
+                    $ms.Write([BitConverter]::GetBytes([uint32]22), 0, 4)
+                    # Icon data
+                    $ms.Write($IconData.Data, 0, $IconData.Data.Length)
+
+                    $tempIcoPath = Join-Path $env:TEMP "temp_largest_icon.ico"
+                    [System.IO.File]::WriteAllBytes($tempIcoPath, $ms.ToArray())
+                } finally {
+                    $ms.Dispose()
+                }
                 
                 Write-Host "Saving as png..." -ForegroundColor Cyan
                 
