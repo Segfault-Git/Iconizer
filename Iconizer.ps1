@@ -1076,8 +1076,13 @@ function apply {
                     (Get-Item -LiteralPath $tmp).Attributes = 'Archive, System, Hidden'
                     
                     $shell = New-Object -ComObject Shell.Application
-                    $shell.NameSpace($full_path_folder).MoveHere($tmp, 0x0004 + 0x0010 + 0x0400)
-                #### Creating desktop.ini file ends
+                    $namespace = $shell.NameSpace($full_path_folder)
+                    $namespace.MoveHere($tmp, 0x0004 + 0x0010 + 0x0400)
+                    [System.Runtime.InteropServices.Marshal]::ReleaseComObject($namespace) | Out-Null
+                    [System.Runtime.InteropServices.Marshal]::ReleaseComObject($shell) | Out-Null
+                    $namespace = $null
+                    $shell = $null
+                    #### Creating desktop.ini file ends
                     
                     Remove-Item -Path "$tmpDir" -Force
                     if ($VerbosePreference -ne 'SilentlyContinue'){ Write-Host " " }
