@@ -332,7 +332,7 @@ function Get-IconsByGroup-Pull {
                                                         Width = $actualWidth
                                                         Height = $actualHeight
                                                         Data = $iconBytes
-                                                        Group = $script:currentGroup
+                                                        Group = $extractionState.CurrentGroup
                                                         ResourceName = $resourceName
                                                     }
                                                 }
