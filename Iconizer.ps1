@@ -554,16 +554,21 @@ function Find-Candidates {
         [parameter(Mandatory = $true)]
         [int]$search_depth,
         [ValidateSet('ico', 'exe')]
-        $priority
+        $priority,
+        [parameter(Mandatory = $false)]
+        $cachedFiles = $null
     )
     
     $folder = Get-Item -LiteralPath $path
-    
     [string]$full_path_folder = $folder.FullName
     
-    $iconsFilesList = Get-ChildItem -LiteralPath "$full_path_folder" -Recurse -Filter "*.ico" -Depth $search_depth -File
-    $exesFilesList = Get-ChildItem -LiteralPath "$full_path_folder" -Recurse -Filter "*.exe" -Depth $search_depth -File
-    $allFiles = @($exesFilesList) + @($iconsFilesList)
+    if ($cachedFiles -ne $null) {
+        $allFiles = $cachedFiles
+    } else {
+        $iconsFilesList = Get-ChildItem -LiteralPath "$full_path_folder" -Recurse -Filter "*.ico" -Depth $search_depth -File
+        $exesFilesList  = Get-ChildItem -LiteralPath "$full_path_folder" -Recurse -Filter "*.exe" -Depth $search_depth -File
+        $allFiles = @($exesFilesList) + @($iconsFilesList)
+    }
     
     [string]$name_folder = ($folder.Name).ToLower()
     $name_folder = $name_folder -replace $pattern_regex, '' -replace "$pattern_regex_digits", '' -replace "$pattern_regex_symbols", ''
@@ -1009,12 +1014,16 @@ function apply {
                 }
                 
                 if (-not $Files) {
-                    $Files = Find-Candidates -path $full_path_folder -search_depth $search_depth -priority $primaryType
+                    $iconsFilesList = Get-ChildItem -LiteralPath "$full_path_folder" -Recurse -Filter "*.ico" -Depth $search_depth -File
+                    $exesFilesList  = Get-ChildItem -LiteralPath "$full_path_folder" -Recurse -Filter "*.exe" -Depth $search_depth -File
+                    $cachedFiles = @($exesFilesList) + @($iconsFilesList)
+
+                    $Files = Find-Candidates -path $full_path_folder -search_depth $search_depth -priority $primaryType -cachedFiles $cachedFiles
                 }
-                
+
                 if (-not $Files) {
                     if ($VerbosePreference -ne 'SilentlyContinue') { Write-Host "$primaryType files not found, switching to $secondaryType search" }
-                    $Files = Find-Candidates -path $full_path_folder -search_depth $search_depth -priority $secondaryType
+                    $Files = Find-Candidates -path $full_path_folder -search_depth $search_depth -priority $secondaryType -cachedFiles $cachedFiles
                 }
                 
                 if ($Files) {
