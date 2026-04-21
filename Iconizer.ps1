@@ -482,10 +482,13 @@ function Convert-IconToPNG {
                     # Approach 1: Direct Icon loading
                     Write-Host "Using direct Icon loading..." -ForegroundColor Cyan
                     $icon = [System.Drawing.Icon]::new($tempIcoPath)
-                    $bitmap = $icon.ToBitmap()
-                    $bitmap.Save($PngPath, [System.Drawing.Imaging.ImageFormat]::Png)
-                    $bitmap.Dispose()
-                    $icon.Dispose()
+                    try {
+                        $bitmap = $icon.ToBitmap()
+                        $bitmap.Save($PngPath, [System.Drawing.Imaging.ImageFormat]::Png)
+                        $bitmap.Dispose()
+                    } finally {
+                        $icon.Dispose()
+                    }
                     $conversionSuccess = $true
                 } catch {
                     Write-Host "Direct Icon loading failed: $($_.Exception.Message)" -ForegroundColor Yellow
@@ -494,13 +497,19 @@ function Convert-IconToPNG {
                     try {
                         Write-Host "Using FileStream approach..." -ForegroundColor Cyan
                         $fileStream = [System.IO.FileStream]::new($tempIcoPath, [System.IO.FileMode]::Open)
-                        $icon = [System.Drawing.Icon]::new($fileStream)
-                        $bitmap = $icon.ToBitmap()
-                        $bitmap.Save($PngPath, [System.Drawing.Imaging.ImageFormat]::Png)
-                        $bitmap.Dispose()
-                        $icon.Dispose()
-                        $fileStream.Close()
-                        $conversionSuccess = $true
+                        try {
+                            $icon = [System.Drawing.Icon]::new($fileStream)
+                            try {
+                                $bitmap = $icon.ToBitmap()
+                                $bitmap.Save($PngPath, [System.Drawing.Imaging.ImageFormat]::Png)
+                                $bitmap.Dispose()
+                            } finally {
+                                $icon.Dispose()
+                            }
+                            $conversionSuccess = $true
+                        } finally {
+                            $fileStream.Close()
+                        }
                     } catch {
                         Write-Host "FileStream approach failed: $($_.Exception.Message)" -ForegroundColor Yellow
                     }
